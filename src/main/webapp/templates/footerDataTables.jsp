@@ -54,7 +54,7 @@
                     }},
                 {data: 'verificacion.materia',
                     render: function(data, type, row) {
-                        return data ? data : '<span class="text-danger">No registrada</span>';
+                        return data ? data != "NULL" ? data : '<span class="text-danger">No registrada</span>' : '<span class="text-danger">No registrada</span>';
                     }},
                 {data: 'verificacion.verificentro',
                     render: function(data, type, row) {
@@ -85,7 +85,7 @@
                 
                 {data: 'tipoPago',
                     render: function(data, type, row) {
-                        return data ? data : '<span class="text-danger">No registrado</span>';
+                        return data ? data != "NULL" ? data : '<span class="text-danger">No registrado</span>' : '<span class="text-danger">No registrado</span>';
                     }},
                 {data: 'numeroNota',
                     render: function(data, type, row) {

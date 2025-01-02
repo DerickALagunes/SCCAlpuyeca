@@ -33,7 +33,7 @@ public class Transaccion {
     }
 
     public enum Pagado {
-        SI, NO
+        SI, NO, NULL
     }
 
     // Getters and Setters
