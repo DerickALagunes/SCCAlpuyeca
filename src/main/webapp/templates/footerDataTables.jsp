@@ -23,6 +23,25 @@
 
         // Inicializar DataTable y almacenar la instancia
         const table = new DataTable(document.getElementById('tabla_transacciones'), {
+
+            initComplete: function() {
+                this.api().columns().every(function() {
+                    var column = this;
+                    var select = $('<select class="form-control form-control-sm"><option value="">Todos</option></select>')
+                        .appendTo($(column.footer()).empty())
+                        .on('change', function() {
+                            // Actualizar el valor del filtro y enviar la nueva solicitud AJAX
+                            table.column(column.index()).search($(this).val()).draw();
+
+                            // Actualizar el indicador de filtros
+                            updateFilterIndicator();
+                        });
+
+                    column.data().unique().sort().each(function(d, j) {
+                        select.append('<option value="' + d + '">' + d + '</option>');
+                    });
+                });
+            },
             scrollX: true, // Habilitar desplazamiento horizontal
             fixedHeader: false, // Asegúrate de desactivar encabezados fijos
             autoWidth: false,
@@ -31,7 +50,12 @@
             },
             ajax: {
                 url: '${pageContext.request.contextPath}/ver_transacciones',
-                type: 'GET'
+                type: 'GET',
+                data: function(d) {
+                    d.columns.forEach((column, index) => {
+                        column.searchValue = table.column(index).search();
+                    });
+                }
             },
             processing: true,
             serverSide: true,
@@ -141,6 +165,22 @@
             // Mostrar el modal
             $('#opcionesModal').modal('show');
         });
+
+        function updateFilterIndicator() {
+            var activeFilters = [];
+            table.columns().every(function() {
+                var column = this;
+                var value = $('select', column.footer()).val();
+                if (value) {
+                    var headerText = $(column.header()).text().trim(); // Obtener texto del encabezado
+                    activeFilters.push(headerText + " : "+ value);
+                }
+            });
+
+            $('#activeFilters').text(
+                activeFilters.length > 0 ? activeFilters.join(', ') : 'Ninguno'
+            );
+        }
 
     });
 </script>

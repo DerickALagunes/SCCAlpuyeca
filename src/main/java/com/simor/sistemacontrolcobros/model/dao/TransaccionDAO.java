@@ -328,33 +328,61 @@ public class TransaccionDAO implements CRUD {
         }
     }
 
-    public ArrayList<Transaccion> get(int start, int length, String searchTerm, String orderColumn, String orderDir) {
+    public ArrayList<Transaccion> get(int start, int length, String orderColumn, String orderDir, List<String> searchValues, String[] columnNames, String searchTerm) {
         ArrayList<Transaccion> list = new ArrayList<>();
-        String query = "SELECT t.id_transaccion, t.id_cliente, t.id_verificacion, t.tipo_pago, t.numero_nota, t.cotizacion, " +
-                "t.cuenta_deposito, t.numero_factura, t.pagado, t.atiende_y_cobra, t.fecha_pedido, v.id_vehiculo, v.materia, " +
-                "v.verificentro, v.precio, v.fecha_folio, v.folio, v2.placa, v2.serie, c.gestor, c.razon_social " +
+
+        // Construir cláusula WHERE dinámica
+        StringBuilder whereClause = new StringBuilder(" WHERE 1=1 ");
+        for (int i = 0; i < searchValues.size(); i++) {
+            if (searchValues.get(i) != null && !searchValues.get(i).isEmpty()) {
+                whereClause.append(" AND ").append(columnNames[i]).append(" LIKE ?");
+            }
+        }
+
+        // Búsqueda global con searchTerm
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            whereClause.append(" AND (");
+            for (int i = 0; i < columnNames.length; i++) {
+                if (i > 0) {
+                    whereClause.append(" OR ");
+                }
+                whereClause.append(columnNames[i]).append(" LIKE ?");
+            }
+            whereClause.append(")");
+        }
+
+        String query = "SELECT t.id_transaccion, t.id_cliente, t.id_verificacion, t.tipo_pago, t.numero_nota, " +
+                "t.cotizacion, t.cuenta_deposito, t.numero_factura, t.pagado, t.atiende_y_cobra, t.fecha_pedido, " +
+                "v.id_vehiculo, v.materia, v.verificentro, v.precio, v.fecha_folio, v.folio, v2.placa, v2.serie, " +
+                "c.gestor, c.razon_social " +
                 "FROM transacciones t " +
                 "JOIN verificaciones v ON v.id_verificacion = t.id_verificacion " +
                 "JOIN vehiculos v2 ON v2.id_vehiculo = v.id_vehiculo " +
                 "JOIN clientes c ON c.id_cliente = t.id_cliente " +
-                "WHERE t.tipo_pago LIKE ? OR t.numero_nota LIKE ? OR t.cotizacion LIKE ? OR t.cuenta_deposito LIKE ? " +
-                "OR t.numero_factura LIKE ? OR t.pagado LIKE ? OR t.atiende_y_cobra LIKE ? OR t.fecha_pedido LIKE ? OR v.materia LIKE ? " +
-                "OR v.verificentro LIKE ? OR v.folio LIKE ? OR v2.placa LIKE ? OR v2.serie LIKE ? " +
-                "OR c.gestor LIKE ? OR c.razon_social LIKE ? " +
-                "ORDER BY " + orderColumn + " " + orderDir + " LIMIT ? OFFSET ?;";
+                whereClause.toString() +
+                " ORDER BY " + orderColumn + " " + orderDir + " LIMIT ? OFFSET ?";
 
         try (Connection con = DatabaseConnectionManager.getConnection()) {
             try (PreparedStatement stmt = con.prepareStatement(query)) {
-                String searchPattern = "%" + searchTerm + "%";
+                int paramIndex = 1;
 
-                // Configurar parámetros de búsqueda
-                for (int i = 1; i <= 15; i++) {
-                    stmt.setString(i, searchPattern);
+                // Agregar parámetros específicos por columna
+                for (String value : searchValues) {
+                    if (value != null && !value.isEmpty()) {
+                        stmt.setString(paramIndex++, "%" + value + "%");
+                    }
                 }
 
-                // Parámetros de paginación
-                stmt.setInt(16, length);
-                stmt.setInt(17, start);
+                // Agregar parámetros de búsqueda global (searchTerm)
+                if (searchTerm != null && !searchTerm.isEmpty()) {
+                    for (String columnName : columnNames) {
+                        stmt.setString(paramIndex++, "%" + searchTerm + "%");
+                    }
+                }
+
+                // Configurar parámetros de paginación
+                stmt.setInt(paramIndex++, length);
+                stmt.setInt(paramIndex, start);
 
                 try (ResultSet res = stmt.executeQuery()) {
                     while (res.next()) {
@@ -425,8 +453,28 @@ public class TransaccionDAO implements CRUD {
         return list;
     }
 
-    public int getCount(String searchTerm) {
+    public int getCount(List<String> searchValues, String[] columnNames, String searchTerm) {
         int count = 0;
+
+        // Construir cláusula WHERE dinámica
+        StringBuilder whereClause = new StringBuilder(" WHERE 1=1 ");
+        for (int i = 0; i < searchValues.size(); i++) {
+            if (searchValues.get(i) != null && !searchValues.get(i).isEmpty()) {
+                whereClause.append(" AND ").append(columnNames[i]).append(" LIKE ?");
+            }
+        }
+
+        // Búsqueda global con searchTerm
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            whereClause.append(" AND (");
+            for (int i = 0; i < columnNames.length; i++) {
+                if (i > 0) {
+                    whereClause.append(" OR ");
+                }
+                whereClause.append(columnNames[i]).append(" LIKE ?");
+            }
+            whereClause.append(")");
+        }
 
         // Consulta SQL para contar registros con búsqueda dinámica
         String query = "SELECT COUNT(*) AS total " +
@@ -434,18 +482,24 @@ public class TransaccionDAO implements CRUD {
                 "JOIN verificaciones v ON v.id_verificacion = t.id_verificacion " +
                 "JOIN vehiculos v2 ON v2.id_vehiculo = v.id_vehiculo " +
                 "JOIN clientes c ON c.id_cliente = t.id_cliente " +
-                "WHERE t.tipo_pago LIKE ? OR t.numero_nota LIKE ? OR t.cotizacion LIKE ? OR t.cuenta_deposito LIKE ? " +
-                "OR t.numero_factura LIKE ? OR t.pagado LIKE ? OR t.atiende_y_cobra LIKE ? OR t.fecha_pedido LIKE ? OR v.materia LIKE ? " +
-                "OR v.verificentro LIKE ? OR v.folio LIKE ? OR v2.placa LIKE ? OR v2.serie LIKE ? " +
-                "OR c.gestor LIKE ? OR c.razon_social LIKE ?";
+                whereClause.toString();
 
         try (Connection con = DatabaseConnectionManager.getConnection()) {
             try (PreparedStatement stmt = con.prepareStatement(query)) {
-                String searchPattern = "%" + searchTerm + "%";
+                int paramIndex = 1;
 
-                // Configurar parámetros de búsqueda
-                for (int i = 1; i <= 15; i++) {
-                    stmt.setString(i, searchPattern);
+                // Agregar parámetros específicos por columna
+                for (String value : searchValues) {
+                    if (value != null && !value.isEmpty()) {
+                        stmt.setString(paramIndex++, "%" + value + "%");
+                    }
+                }
+
+                // Agregar parámetros de búsqueda global (searchTerm)
+                if (searchTerm != null && !searchTerm.isEmpty()) {
+                    for (String columnName : columnNames) {
+                        stmt.setString(paramIndex++, "%" + searchTerm + "%");
+                    }
                 }
 
                 // Ejecutar consulta y obtener el conteo
