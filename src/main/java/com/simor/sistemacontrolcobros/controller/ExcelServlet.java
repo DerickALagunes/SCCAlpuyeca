@@ -127,6 +127,7 @@ public class ExcelServlet extends HttpServlet {
 
     // Método para manejar celdas vacías
     private void manejarCeldaVacia(int j, Transaccion t, Date sqlDate) {
+        System.out.println("Entro a celda vacia : " + j);
         switch (j) {
             case 0 -> t.getCliente().setGestor(null);
             case 1 -> t.getCliente().setRazonSocial(null);
@@ -151,6 +152,7 @@ public class ExcelServlet extends HttpServlet {
     // Método para manejar celdas no vacías
     private void manejarCeldaNoVacia(Cell cell, int j, Transaccion t, HttpServletRequest req, HttpServletResponse resp, String columna) throws ServletException, IOException {
         try {
+            logger.info("Valor celda: " + j + " = " + cell.toString());
             switch (j) {
                 case 0 -> asignarValorTexto(cell, valor -> {
                     t.getCliente().setGestor(valor);
