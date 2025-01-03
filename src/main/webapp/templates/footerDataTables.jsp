@@ -8,6 +8,7 @@
 <script src="${pageContext.request.contextPath}/assets/js/datatables.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/dataTables.bootstrap5.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/es-MX.json"></script>
+<script src="${pageContext.request.contextPath}/assets/js/select2.js"></script>
 <!-- Script para mostrar el modal automáticamente si el mensaje existe -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -25,21 +26,44 @@
         const table = new DataTable(document.getElementById('tabla_transacciones'), {
 
             initComplete: function() {
-                this.api().columns().every(function() {
-                    var column = this;
-                    var select = $('<select class="form-control form-control-sm"><option value="">Todos</option></select>')
-                        .appendTo($(column.footer()).empty())
-                        .on('change', function() {
-                            // Actualizar el valor del filtro y enviar la nueva solicitud AJAX
-                            table.column(column.index()).search($(this).val()).draw();
+                var api = this.api();
+                // Realizar una solicitud AJAX para obtener los valores únicos para los filtros
+                $.ajax({
+                    url: '${pageContext.request.contextPath}/filtros',  // Aquí va la URL para obtener los valores únicos
+                    method: 'GET',
+                    success: function(response) {
+                        // Asumimos que la respuesta es un objeto que tiene los valores únicos para cada columna
+                        api.columns().every(function() {
+                            var column = this;
+                            var select = $('<select class="form-control form-control-sm"><option value="">Filtros</option></select>')
+                                .appendTo($(column.footer()).empty())
+                                .on('change', function() {
+                                    // Actualizar el valor del filtro y enviar la nueva solicitud AJAX
+                                    api.column(column.index()).search($(this).val()).draw();
 
-                            // Actualizar el indicador de filtros
-                            updateFilterIndicator();
+                                    // Actualizar el indicador de filtros
+                                    updateFilterIndicator();
+                                });
+
+                            // Suponiendo que 'response' es un objeto con claves de índice de columna y sus valores únicos
+                            var columnIndex = column.index();
+                            var uniqueValues = response[columnIndex] || [];
+
+                            // Agregar los valores únicos al select
+                            uniqueValues.forEach(function(d) {
+                                if (d) {  // Filtrar valores nulos
+                                    select.append('<option value="' + d + '">' + d + '</option>');
+                                }
+                            });
+
+                            // Inicializar Select2 en este select
+                            select.select2({
+                                placeholder: "Filtro",
+                                dropdownAutoWidth: true, // Hace que el ancho del dropdown se ajuste al contenido
+                                width: '100%' // Ajustar al ancho del footer
+                            });
                         });
-
-                    column.data().unique().sort().each(function(d, j) {
-                        select.append('<option value="' + d + '">' + d + '</option>');
-                    });
+                    }
                 });
             },
             scrollX: true, // Habilitar desplazamiento horizontal
@@ -181,6 +205,17 @@
                 activeFilters.length > 0 ? activeFilters.join(', ') : 'Ninguno'
             );
         }
+
+
+        // Reiniciar la tabla cuando se haga clic en el botón
+        $('#resetTable').on('click', function () {
+            table.search('').columns().search('').draw(); // Restablecer búsquedas y filtros
+            table.order([]).draw(); // Restablecer el ordenamiento
+            table.ajax.reload(); // Recargar los datos desde el servidor
+
+            // Opcional: reinicia también los selects dinámicos en el footer
+            $('tfoot select').val('');
+        });
 
     });
 </script>

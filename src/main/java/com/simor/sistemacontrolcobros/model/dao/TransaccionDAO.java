@@ -352,7 +352,12 @@ public class TransaccionDAO implements CRUD {
         }
 
         String query = "SELECT t.id_transaccion, t.id_cliente, t.id_verificacion, t.tipo_pago, t.numero_nota, " +
-                "t.cotizacion, t.cuenta_deposito, t.numero_factura, t.pagado, t.atiende_y_cobra, t.fecha_pedido, " +
+                "t.cotizacion, t.cuenta_deposito, t.numero_factura, t.pagado, " +
+                "CASE " +
+                "WHEN t.pagado = 'SI' THEN 'NO' " +
+                "WHEN t.pagado = 'NO' THEN 'SI' " +
+                "ELSE t.pagado " +
+                "END AS pendiente, t.atiende_y_cobra, t.fecha_pedido, " +
                 "v.id_vehiculo, v.materia, v.verificentro, v.precio, v.fecha_folio, v.folio, v2.placa, v2.serie, " +
                 "c.gestor, c.razon_social " +
                 "FROM transacciones t " +

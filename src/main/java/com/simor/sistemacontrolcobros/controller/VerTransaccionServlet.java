@@ -1,6 +1,7 @@
 package com.simor.sistemacontrolcobros.controller;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.simor.sistemacontrolcobros.model.DataTableResponse;
 import com.simor.sistemacontrolcobros.model.Transaccion;
 import com.simor.sistemacontrolcobros.model.dao.TransaccionDAO;
@@ -56,12 +57,13 @@ public class VerTransaccionServlet extends HttpServlet {
                 "cuenta_deposito",
                 "numero_factura",
                 "pagado",
+                "pagado",
                 "fecha_pedido"
         };
 
         List<String> searchValues = new ArrayList<>();
         for (int i = 0; i < columnNames.length; i++) {
-            if(i == 10 || i == 16){
+            if (i == 10 || i == 16) {
                 String searchValue = request.getParameter("columns[" + i + "][search][value]");
                 // Validar y convertir si es una fecha
                 if (searchValue != null && !searchValue.isEmpty()) {
@@ -75,7 +77,7 @@ public class VerTransaccionServlet extends HttpServlet {
                     }
                 }
                 searchValues.add(searchValue);
-            }else{
+            } else{
                 String searchValue = request.getParameter("columns[" + i + "][search][value]");
                 searchValues.add(searchValue);
             }
@@ -108,7 +110,7 @@ public class VerTransaccionServlet extends HttpServlet {
         dataTableResponse.setRecordsFiltered(total);
         dataTableResponse.setData(dataList);
 
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().serializeNulls().create();
         String json = gson.toJson(dataTableResponse);
 
         response.setContentType("application/json");

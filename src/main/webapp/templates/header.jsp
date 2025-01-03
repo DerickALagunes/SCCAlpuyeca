@@ -13,6 +13,7 @@
     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/assets/css/jquery.dataTables.min.css" />
     <link rel="stylesheet" type="text/css" href="${pageContext.request.contextPath}/assets/css/datatables.min.css" />
     <link rel="icon" href="${pageContext.request.contextPath}/assets/img/logo.png" type="image/png">
+    <link type="text/css" href="${pageContext.request.contextPath}/assets/css/select2.css" rel="stylesheet" />
     <style>
         .section-border {
             border: 1px solid #ced4da; /* Color del borde */
