@@ -50,6 +50,11 @@
                     }},
                 {data: 'foto',
                     render: function(data, type, row) {
+                        if(data){
+                            data = data.replace("/opt/tomcat/webapps/SistemaControlCobros-1.0-SNAPSHOT", "");
+                        }else{
+                            data = "/assets/fotosPedidos/sin_imagen.png"
+                        }
                         return '<img class="figure-img img-fluid rounded" alt="Imagen del pedido" src="'+data+'" />';
                     }},
             ]
